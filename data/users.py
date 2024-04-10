@@ -1,5 +1,6 @@
 import sqlalchemy
 from .db_session import SqlAlchemyBase, create_session
+from sqlalchemy import orm
 
 
 class User(SqlAlchemyBase):
@@ -14,3 +15,4 @@ class User(SqlAlchemyBase):
     name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
     email = sqlalchemy.Column(sqlalchemy.String, index=True, unique=True, nullable=True)
     password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    review = orm.relationship("Review", back_populates='user')
