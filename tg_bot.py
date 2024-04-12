@@ -4,11 +4,15 @@ from telegram.ext import Application, MessageHandler, filters, CommandHandler, C
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
 from data import db_session
 from data.users import User
+from data.reviews import Review
+import requests
+import aiohttp
 
 log_in = False
 curr_user_id = None
 l = lambda x: 'a' <= x <= 'я' or 'А' <= x <= 'Я' or '0' <= x <= '9' or x in (' ', '_')
 temail, tname, tpassword = None, None, None
+torg, tmark, topinion = None, None, None
 wait_name = None
 BOT_TOKEN = '7003047434:AAFLOJSvtnsxSb2eosLtMxKa3xzKY002uME'
 logging.basicConfig(
@@ -19,6 +23,8 @@ db_session.global_init("db/travel.db")
 
 back_keyboard = ReplyKeyboardMarkup([['/no']], one_time_keyboard=True, resize_keyboard=True)
 markup = ReplyKeyboardMarkup([['/reg'], ['/login']], one_time_keyboard=True, resize_keyboard=True)
+onetofive = ReplyKeyboardMarkup([['1'], ['2'], ['3'], ['4'], ['5'], ['/no']], one_time_keyboard=True,
+                                resize_keyboard=True)
 
 
 async def start(update, context):
@@ -26,7 +32,8 @@ async def start(update, context):
 
 
 async def reg(update, context):
-    temp_keyboard = ReplyKeyboardMarkup([['Да', '/no']], one_time_keyboard=True, resize_keyboard=True)
+    temp_keyboard = ReplyKeyboardMarkup([['Да', '/no']], one_time_keyboard=True,
+                                        resize_keyboard=True)
     await update.message.reply_text('Вы хотите зарегестрироваться?', reply_markup=temp_keyboard)
     return 'add_new_email'
 
@@ -69,14 +76,14 @@ async def add_new_password(update, context):
         global l
         if not all(l(el) for el in list(update.message.text)):
             await update.message.reply_text(' '.join(['В имени должны быть только',
-                                            'буквы русской раскладки в любом регистре,',
-                                            'цифры, пробелы и символ "_"']),
+                                                      'буквы русской раскладки в любом регистре,',
+                                                      'цифры, пробелы и символ "_"']),
                                             reply_markup=back_keyboard)
             return 'add_new_password'
     except Exception as e:
         await update.message.reply_text(' '.join(['В имени должны быть только',
-                                        'буквы русской раскладки в любом регистре,',
-                                        'цифры, пробелы и символ "_"']),
+                                                  'буквы русской раскладки в любом регистре,',
+                                                  'цифры, пробелы и символ "_"']),
                                         reply_markup=back_keyboard)
         return 'add_new_password'
 
@@ -99,7 +106,6 @@ async def end_reg(update, context):
     if len(update.message.text) > 22:
         await update.message.reply_text('Пароль слишком длинный!', reply_markup=back_keyboard)
         return 'end_reg'
-    await update.message.reply_text('Спасибо за регестрацию!', reply_markup=markup)
 
     global tname, tpassword, temail
     tpassword = update.message.text
@@ -111,7 +117,16 @@ async def end_reg(update, context):
     db_sess.add(user)
     db_sess.commit()
 
-    temail, tname, tpassword = None, None, None
+    global markup
+    markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout'], ['/make_review']],
+                                 one_time_keyboard=True, resize_keyboard=True)
+    await update.message.reply_text('Спасибо за регестрацию!', reply_markup=markup)
+
+    global log_in, curr_user_id
+    log_in = True
+    for u in db_sess.query(User).filter(User.name == user.name):
+        curr_user_id = u.id
+
     return ConversationHandler.END
 
 
@@ -138,7 +153,7 @@ async def entry_password(update, context):
     global wait_name, markup
     for user in db_sess.query(User).filter(User.name == wait_name):
         if user.password == update.message.text:
-            markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout']],
+            markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout'], ['/make_review']],
                                          one_time_keyboard=True, resize_keyboard=True)
             await update.message.reply_text('Вы успешно вошли!', reply_markup=markup)
             global log_in, curr_user_id
@@ -154,16 +169,114 @@ async def logout(update, context):
     if not log_in:
         await update.message.reply_text('Вы еще не вошли', reply_markup=markup)
         return
-    markup = ReplyKeyboardMarkup([['/reg'], ['/login']], one_time_keyboard=True, resize_keyboard=True)
+    markup = ReplyKeyboardMarkup([['/reg'], ['/login']], one_time_keyboard=True,
+                                 resize_keyboard=True)
     await update.message.reply_text('Вы вышли из своего аккаунта', reply_markup=markup)
     curr_user_id, log_in = None, False
 
 
+async def make_review(update, context):
+    if not log_in:
+        await update.message.reply_text('Анонимные отзывы оставлять нельзя!', reply_markup=markup)
+        return
+    await update.message.reply_text('Выберите место', reply_markup=back_keyboard)
+    return 'which_place'
+
+
+async def which_place(update, context):
+    try:
+        search_api_server = "https://search-maps.yandex.ru/v1/"
+        api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+        params = {
+            'apikey': api_key,
+            'text': update.message.text,
+            'lang': 'ru_RU',
+            'type': 'biz'
+        }
+        response = requests.get(search_api_server, params=params)
+    except Exception:
+        await update.message.reply_text('Такое место не найдено', reply_markup=back_keyboard)
+        return 'which_place'
+    if not response:
+        await update.message.reply_text('Такое место не найдено', reply_markup=back_keyboard)
+        return 'which_place'
+    try:
+        json_response = response.json()
+        organization = json_response["features"][0]
+        org_name = organization["properties"]["CompanyMetaData"]["name"]
+        org_address = organization["properties"]["CompanyMetaData"]["address"]
+        point = organization["geometry"]["coordinates"]
+        org_point = "{0},{1}".format(point[0], point[1])
+        delta = "0.005"
+        ll = org_point
+        spn = ",".join([delta, delta])
+        l = "map"
+        pt = "{0},pm2dgl".format(org_point)
+        map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
+    except Exception:
+        await update.message.reply_text('Такое место не найдено', reply_markup=back_keyboard)
+        return 'which_place'
+    await context.bot.send_photo(
+        update.message.chat_id,
+        map_api_server,
+        caption="Нашёл:"
+    )
+    global torg
+    torg = org_name + ', ' + org_address
+    await update.message.reply_text('Оцените это место от 1 до 5', reply_markup=onetofive)
+    return 'mark_it'
+
+
+async def mark_it(update, context):
+    try:
+        if int(update.message.text) not in range(1, 6):
+            await update.message.reply_text('Вы ввели не число из диапозона от 1 до 5',
+                                            reply_markup=onetofive)
+            return 'mark_it'
+    except Exception:
+        await update.message.reply_text('Вы ввели не число из диапозона от 1 до 5',
+                                        reply_markup=onetofive)
+        return 'mark_it'
+    global tmark
+    tmark = int(update.message.text)
+    await update.message.reply_text('Скажите пару слов об этом месте', reply_markup=back_keyboard)
+    return 'opinion'
+
+
+async def opinion(update, context):
+    if len(update.message.text) < 6:
+        await update.message.reply_text('Слишком короткий отзыв!', reply_markup=back_keyboard)
+        return 'opinion'
+    if len(update.message.text) > 100:
+        await update.message.reply_text('Слишком длинный отзыв!', reply_markup=back_keyboard)
+        return 'opinion'
+    global torg, tmark, topinion
+    topinion = update.message.text
+
+    r = Review()
+    r.place_name = torg
+    r.mark = tmark
+    r.opinion = topinion
+    r.user_id = curr_user_id
+    db_sess = db_session.create_session()
+    db_sess.add(r)
+    db_sess.commit()
+
+    await update.message.reply_text('Спасибо за отзыв!', reply_markup=markup)
+
+    return ConversationHandler.END
+
+
 async def no(update, context):
     await update.message.reply_text("Возращаемся...", reply_markup=markup)
-    global tname, tpassword, temail
-    temail, tname, tpassword = None, None, None
     return ConversationHandler.END
+
+
+async def get_response(url, params):
+    logger.info(f"getting {url}")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params) as resp:
+            return await resp.json()
 
 
 def main():
@@ -171,6 +284,16 @@ def main():
 
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('logout', logout))
+
+    application.add_handler(ConversationHandler(
+        entry_points=[CommandHandler('make_review', make_review)],
+        states={
+            'which_place': [MessageHandler(filters.TEXT & ~filters.COMMAND, which_place)],
+            'mark_it': [MessageHandler(filters.TEXT & ~filters.COMMAND, mark_it)],
+            'opinion': [MessageHandler(filters.TEXT & ~filters.COMMAND, opinion)]
+        },
+        fallbacks=[CommandHandler('no', no)]
+    ))
 
     application.add_handler(ConversationHandler(
         entry_points=[CommandHandler('reg', reg)],
