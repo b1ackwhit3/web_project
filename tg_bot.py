@@ -1,7 +1,7 @@
 import logging
 from email_validate import validate
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ConversationHandler
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, KeyboardButton
+from telegram import ReplyKeyboardMarkup
 from data import db_session
 from data.users import User
 from data.reviews import Review
@@ -21,27 +21,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 db_session.global_init("db/travel.db")
 
-back_keyboard = ReplyKeyboardMarkup([['/no']], one_time_keyboard=True, resize_keyboard=True)
-markup = ReplyKeyboardMarkup([['/reg'], ['/login']], one_time_keyboard=True, resize_keyboard=True)
-onetofive = ReplyKeyboardMarkup([['1'], ['2'], ['3'], ['4'], ['5'], ['/no']], one_time_keyboard=True,
-                                resize_keyboard=True)
-
+back_keyboard = ReplyKeyboardMarkup([['/no']], one_time_keyboard=True,
+                                    resize_keyboard=True)
+markup = ReplyKeyboardMarkup([['/reg'], ['/login']], one_time_keyboard=True,
+                             resize_keyboard=True)
+onetofive = ReplyKeyboardMarkup([['1'], ['2'], ['3'], ['4'], ['5'], ['/no']],
+                                one_time_keyboard=True, resize_keyboard=True)
+temp_keyboard = ReplyKeyboardMarkup([['Да', '/no']], one_time_keyboard=True,
+                                        resize_keyboard=True)
 
 async def start(update, context):
-    await update.message.reply_text('Привет. Тут будет приветствие получше.', reply_markup=markup)
+    await update.message.reply_text('Привет, это бот Traveler! Тут ты можешь оставлять отзывы на' +
+                                    f' места\n\nВот список команд:\n/reg - Зарегестрироваться\n/' +
+                                    f'login - Войти', reply_markup=markup)
+    await context.bot.send_photo(
+        update.message.chat_id,
+        open('static/img/main_jpg.png', 'rb')
+    )
 
 
 async def reg(update, context):
-    temp_keyboard = ReplyKeyboardMarkup([['Да', '/no']], one_time_keyboard=True,
-                                        resize_keyboard=True)
-    await update.message.reply_text('Вы хотите зарегестрироваться?', reply_markup=temp_keyboard)
+    await update.message.reply_text('Вы хотите зарегестрироваться?\n\n/no - вернуться',
+                                    reply_markup=temp_keyboard)
     return 'add_new_email'
 
 
 async def add_new_email(update, context):
-    if update.message.text == 'нет':
-        await update.message.reply_text('Возвращаемся...')
-        return ConversationHandler.END
     await update.message.reply_text('Введите свой e-mail', reply_markup=back_keyboard)
     return 'add_new_name'
 
@@ -49,7 +54,8 @@ async def add_new_email(update, context):
 async def add_new_name(update, context):
     if not validate(update.message.text, check_smtp=False):
         await update.message.reply_text(
-            'Ошибка. E-mail неправильно введён либо недоступен Попробуйте другой.',
+            'Ошибка. E-mail неправильно введён либо недоступен ',
+            'Попробуйте другой.',
             reply_markup=back_keyboard)
         return 'add_new_name'
 
@@ -61,7 +67,8 @@ async def add_new_name(update, context):
             return 'add_new_name'
     global temail
     temail = update.message.text
-    await update.message.reply_text('Как мне вас называть?', reply_markup=back_keyboard)
+    await update.message.reply_text('Как мне вас называть?',
+                                    reply_markup=back_keyboard)
     return 'add_new_password'
 
 
@@ -118,8 +125,8 @@ async def end_reg(update, context):
     db_sess.commit()
 
     global markup
-    markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout'], ['/make_review']],
-                                 one_time_keyboard=True, resize_keyboard=True)
+    markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout'], ['/make_review'],
+                                  ['/see_reviews']], one_time_keyboard=True, resize_keyboard=True)
     await update.message.reply_text('Спасибо за регестрацию!', reply_markup=markup)
 
     global log_in, curr_user_id
@@ -153,7 +160,8 @@ async def entry_password(update, context):
     global wait_name, markup
     for user in db_sess.query(User).filter(User.name == wait_name):
         if user.password == update.message.text:
-            markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout'], ['/make_review']],
+            markup = ReplyKeyboardMarkup([['/reg'], ['/login'], ['/logout'],
+                                          ['/make_review'], ['/see_reviews']],
                                          one_time_keyboard=True, resize_keyboard=True)
             await update.message.reply_text('Вы успешно вошли!', reply_markup=markup)
             global log_in, curr_user_id
@@ -177,7 +185,7 @@ async def logout(update, context):
 
 async def make_review(update, context):
     if not log_in:
-        await update.message.reply_text('Анонимные отзывы оставлять нельзя!', reply_markup=markup)
+        await update.message.reply_text('Анонимные отзывы оставлять нельзя!\n\n/no - вернуться', reply_markup=markup)
         return
     await update.message.reply_text('Выберите место', reply_markup=back_keyboard)
     return 'which_place'
@@ -272,6 +280,24 @@ async def no(update, context):
     return ConversationHandler.END
 
 
+async def see_reviews(update, context):
+    if not log_in:
+        await update.message.reply_text('Я не знаю твои отзывы!' +
+                                        'Представься, аноним!\n\n/no - вернуться',
+                                        reply_markup=markup)
+        return
+    db_sess = db_session.create_session()
+    if len(list(db_sess.query(Review).filter(Review.user_id == curr_user_id))) == 0:
+        await update.message.reply_text('У тебя нет отзывов! Сделай их!' +
+                                        '\n\n/no - вернуться',
+                                        reply_markup=markup)
+        return
+    for r in db_sess.query(Review).filter(Review.user_id == curr_user_id):
+        await update.message.reply_text(f'{r.place_name} - {r.mark}/5 - {r.opinion}')
+    await update.message.reply_text('Вот все твои отзывы!', reply_markup=markup)
+    return
+
+
 async def get_response(url, params):
     logger.info(f"getting {url}")
     async with aiohttp.ClientSession() as session:
@@ -284,6 +310,7 @@ def main():
 
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('logout', logout))
+    application.add_handler(CommandHandler('see_reviews', see_reviews))
 
     application.add_handler(ConversationHandler(
         entry_points=[CommandHandler('make_review', make_review)],
