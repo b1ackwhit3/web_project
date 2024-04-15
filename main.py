@@ -1,25 +1,20 @@
 from flask import Flask, render_template, redirect, request, make_response, session
 from data import db_session
-from data.user import User
-from forms.user import RegisterForm
 import datetime
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from forms.user import LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(
     days=365)
-login_manager = LoginManager()
-login_manager.init_app(app)
 
 
 @app.route('/')
 def index():
-    pass
+    return render_template('base.html', log_in=True, username='Вася Петров')
 
-
+"""
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegisterForm()
@@ -83,9 +78,11 @@ def logout():
     logout_user()
     return redirect('/')
 
+"""
+
 
 def main():
-    db_session.global_init('db/blogs.db')
+    db_session.global_init('db/travel.db')
     app.run()
 
 
