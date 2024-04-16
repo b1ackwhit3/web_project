@@ -10,7 +10,7 @@
     <header>
         <nav class="navbar navbar-expand-lg bg-body-tertiary" data-bs-theme="dark">
           <div class="container-fluid">
-            <a class="navbar-brand" href="#">Traveler</a>
+            <a class="navbar-brand" href="/">Traveler</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -28,13 +28,13 @@
                   <a class="nav-link" href="/login">Войти</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#">Зарегестрироваться</a>
+                  <a class="nav-link" href="/register">Зарегестрироваться</a>
                 </li>
                 {% endif %}
               </ul>
               <span class="navbar-text">
                  {% if current_user.is_authenticated %}
-                  Вася
+                    <a>{{current_user.name}}</a>
                   <a href="/logout">Выйти</a>
                  {% endif %}
               </span>
