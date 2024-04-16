@@ -1,10 +1,11 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, request
 from data import db_session
 from data.users import User
 import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required
 from forms.login import LoginForm
 from forms.reg import RegisterForm
+from PIL import Image
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -40,6 +41,8 @@ def register():
             name=form.name.data,
             email=form.email.data,
         )
+        f = request.files['file']
+        f.save(f'static/img/pfp/{user.name}')
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
