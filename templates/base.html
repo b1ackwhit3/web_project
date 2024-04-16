@@ -16,7 +16,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarText">
               <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                {% if log_in %}
+                {% if current_user.is_authenticated %}
                 <li class="nav-item">
                   <a class="nav-link" href="#">Создать отзыв</a>
                 </li>
@@ -25,7 +25,7 @@
                 </li>
                 {% else %}
                 <li class="nav-item">
-                  <a class="nav-link" href="#">Войти</a>
+                  <a class="nav-link" href="/login">Войти</a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="#">Зарегестрироваться</a>
@@ -33,8 +33,9 @@
                 {% endif %}
               </ul>
               <span class="navbar-text">
-                 {% if log_in %}
-                  Вася Петров
+                 {% if current_user.is_authenticated %}
+                  Вася
+                  <a href="/logout">Выйти</a>
                  {% endif %}
               </span>
             </div>
