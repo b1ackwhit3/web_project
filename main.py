@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, url_for
 from data import db_session
 from data.users import User
 import datetime
@@ -37,15 +37,18 @@ def register():
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('register.html', title='Регистрация',
                                    form=form, message='Пользователь уже существует')
-        for f in form.photo.data:
-            f.save(os.path.join(app.instance_path, 'static/img/pfp', form.name.data))
         user = User(
             name=form.name.data,
             email=form.email.data,
         )
+        f = form.photo.data
+        if f:
+            f.save(f'static/img/pfp/{form.name.data}.png')
+            user.have_photo = True
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
+        login_user(user, remember=True)
         return redirect('/')
     return render_template('register.html', title='Регистрация',
                            form=form)

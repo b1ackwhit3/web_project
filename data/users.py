@@ -16,6 +16,7 @@ class User(SqlAlchemyBase, UserMixin):
     name = sqlalchemy.Column(sqlalchemy.String, unique=True)
     email = sqlalchemy.Column(sqlalchemy.String, index=True, unique=True)
     password = sqlalchemy.Column(sqlalchemy.String)
+    have_photo = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
     review = orm.relationship("Review", back_populates='user')
 
     def set_password(self, password):
