@@ -1,11 +1,11 @@
-from flask import Flask, render_template, redirect, request
+from flask import Flask, render_template, redirect
 from data import db_session
 from data.users import User
 import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required
 from forms.login import LoginForm
 from forms.reg import RegisterForm
-from PIL import Image
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -37,12 +37,12 @@ def register():
         if db_sess.query(User).filter(User.email == form.email.data).first():
             return render_template('register.html', title='Регистрация',
                                    form=form, message='Пользователь уже существует')
+        for f in form.photo.data:
+            f.save(os.path.join(app.instance_path, 'static/img/pfp', form.name.data))
         user = User(
             name=form.name.data,
             email=form.email.data,
         )
-        f = request.files['file']
-        f.save(f'static/img/pfp/{user.name}')
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
