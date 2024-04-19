@@ -1,0 +1,22 @@
+body{
+    background: url(https://i.pinimg.com/originals/ea/f2/93/eaf293e294e72c0387d06514dcaeb18c.jpg);
+}
+.navbar{
+    --bs-navbar-padding-y: 30px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+section {
+    margin-top: 60px;
+    margin-left: 160px;
+    margin-right: 160px;
+    display: block;
+    background-color: white;
+    opacity: 0.7;
+    min-height: 1000px;
+}
+
+#ava {
+    width: 100%;
+    height: auto;
+}

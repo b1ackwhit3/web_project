@@ -1,11 +1,11 @@
-from flask import Flask, render_template, redirect, request, make_response, session
+from flask import Flask, render_template, redirect, url_for
 from data import db_session
-from data.user import User
-from forms.user import RegisterForm
+from data.users import User
 import datetime
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from forms.user import LoginForm
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from forms.login import LoginForm
+from forms.reg import RegisterForm
+import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -17,7 +17,13 @@ login_manager.init_app(app)
 
 @app.route('/')
 def index():
-    pass
+    return render_template('base.html')
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    db_sess = db_session.create_session()
+    return db_sess.query(User).get(user_id)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -34,33 +40,18 @@ def register():
         user = User(
             name=form.name.data,
             email=form.email.data,
-            about=form.about.data
         )
+        f = form.photo.data
+        if f:
+            f.save(f'static/img/pfp/{form.name.data}.png')
+            user.have_photo = True
         user.set_password(form.password.data)
         db_sess.add(user)
         db_sess.commit()
+        login_user(user, remember=True)
         return redirect('/')
     return render_template('register.html', title='Регистрация',
                            form=form)
-
-
-@app.route('/cookie')
-def cookie_test():
-    visits_count = int(request.cookies.get('visits_count', 0))
-    if visits_count:
-        ans = make_response(f'Вы пришли на страницу {visits_count + 1} раз')
-        ans.set_cookie('visits_count', str(visits_count + 1), max_age=60 * 60 * 24)
-    else:
-        ans = make_response(f'Вы пришли на страницу первый раз за сутки')
-        ans.set_cookie('visits_count', '1', max_age=60 * 60 * 24)
-    return ans
-
-
-@app.route('/session')
-def session_test():
-    visits_count = session.get('visits_count', 0)
-    session['visits_count'] = visits_count + 1
-    return make_response(f'Вы пришли на страницу {visits_count + 1} раз')
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -68,7 +59,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         db_sess = db_session.create_session()
-        user = db_sess.query(User).filter(User.email == form.email.data).first()
+        user = db_sess.query(User).filter(User.name == form.name.data).first()
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             return redirect('/')
@@ -84,8 +75,25 @@ def logout():
     return redirect('/')
 
 
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
+
+@app.route('/delete_profile')
+@login_required
+def delete_profile():
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.name == current_user.name).first()
+    os.remove(f'D:\group_web_project\static\img\pfp\{user.name}.png')
+    db_sess.delete(user)
+    db_sess.commit()
+    return redirect('/')
+
+
 def main():
-    db_session.global_init('db/blogs.db')
+    db_session.global_init('db/travel.db')
     app.run()
 
 
