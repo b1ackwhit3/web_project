@@ -2,7 +2,7 @@ from flask import Flask, render_template, redirect, url_for
 from data import db_session
 from data.users import User
 import datetime
-from flask_login import LoginManager, login_user, logout_user, login_required
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from forms.login import LoginForm
 from forms.reg import RegisterForm
 import os
@@ -72,6 +72,23 @@ def login():
 @login_required
 def logout():
     logout_user()
+    return redirect('/')
+
+
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html')
+
+
+@app.route('/delete_profile')
+@login_required
+def delete_profile():
+    db_sess = db_session.create_session()
+    user = db_sess.query(User).filter(User.name == current_user.name).first()
+    os.remove(f'D:\group_web_project\static\img\pfp\{user.name}.png')
+    db_sess.delete(user)
+    db_sess.commit()
     return redirect('/')
 
 
