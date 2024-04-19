@@ -1,10 +1,12 @@
 from flask import Flask, render_template, redirect, url_for
 from data import db_session
 from data.users import User
+from data.reviews import Review
 import datetime
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from forms.login import LoginForm
 from forms.reg import RegisterForm
+from forms.make_review import ReviewForm
 import os
 
 app = Flask(__name__)
@@ -90,6 +92,30 @@ def delete_profile():
     db_sess.delete(user)
     db_sess.commit()
     return redirect('/')
+
+
+@app.route('/make_review')
+@login_required
+def make_review():
+    form = ReviewForm()
+    if form.validate_on_submit():
+        db_sess = db_session.create_session()
+        review = Review(
+            place_name=form.place_name.data,
+            mark=form.mark.data,
+            opinion=form.opinion.data,
+            user_id=current_user.id
+        )
+        db_sess.add(review)
+        db_sess.commit()
+        return redirect('/')
+    return render_template('make_review.html', title='Создать отзыв',
+                           form=form)
+
+
+@login_required
+def profile():
+    return render_template('profile.html')
 
 
 def main():
