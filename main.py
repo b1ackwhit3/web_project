@@ -88,13 +88,13 @@ def profile():
 def delete_profile():
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.name == current_user.name).first()
-    os.remove(f'D:\group_web_project\static\img\pfp\{user.name}.png')
+    os.remove(os.path.abspath(f'static/img/pfp/{current_user.name}.png'))
     db_sess.delete(user)
     db_sess.commit()
     return redirect('/')
 
 
-@app.route('/make_review')
+@app.route('/make_review', methods=['GET', 'POST'])
 @login_required
 def make_review():
     form = ReviewForm()
