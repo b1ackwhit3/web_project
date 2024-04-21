@@ -20,7 +20,32 @@ login_manager.init_app(app)
 
 @app.route('/')
 def index():
-    return render_template('base.html')
+    db_sess = db_session.create_session()
+    lastnews = []
+    for r in db_sess.query(Review).order_by(Review.id.desc()).limit(3).all():
+        search_api_server = "https://search-maps.yandex.ru/v1/"
+        api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+        params = {
+            'apikey': api_key,
+            'text': r.place_name,
+            'lang': 'ru_RU',
+            'type': 'biz'
+        }
+        response = requests.get(search_api_server, params=params)
+        json_response = response.json()
+        organization = json_response["features"][0]
+        org_name = organization["properties"]["CompanyMetaData"]["name"]
+        org_address = organization["properties"]["CompanyMetaData"]["address"]
+        point = organization["geometry"]["coordinates"]
+        org_point = "{0},{1}".format(point[0], point[1])
+        delta = "0.005"
+        ll = org_point
+        spn = ",".join([delta, delta])
+        l = "map"
+        pt = "{0},pm2dgl".format(org_point)
+        map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
+        lastnews.append((r.place_name, map_api_server, r.mark, r.opinion))
+    return render_template('index.html', lastnews=lastnews)
 
 
 @login_manager.user_loader
@@ -187,6 +212,39 @@ def check_review():
         map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
         files.append((r.place_name, map_api_server, r.mark, r.opinion))
     return render_template('check_review.html', files=files)
+
+
+@app.route('/review/<string:place_name>')
+def review(place_name):
+    db_sess = db_session.create_session()
+    search_api_server = "https://search-maps.yandex.ru/v1/"
+    api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+    params = {
+        'apikey': api_key,
+        'text': place_name,
+        'lang': 'ru_RU',
+        'type': 'biz'
+    }
+    response = requests.get(search_api_server, params=params)
+    json_response = response.json()
+    organization = json_response["features"][0]
+    org_name = organization["properties"]["CompanyMetaData"]["name"]
+    org_address = organization["properties"]["CompanyMetaData"]["address"]
+    point = organization["geometry"]["coordinates"]
+    org_point = "{0},{1}".format(point[0], point[1])
+    delta = "0.005"
+    ll = org_point
+    spn = ",".join([delta, delta])
+    l = "map"
+    pt = "{0},pm2dgl".format(org_point)
+    map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
+    n = db_sess.query(Review).filter(Review.place_name == place_name).count()
+    summa = 0
+    for el in db_sess.query(Review).filter(Review.place_name == place_name).all():
+        summa += el.mark
+    return render_template('review.html', place_name=place_name, p=map_api_server,
+                           sr=summa/n)
+
 
 
 def main():

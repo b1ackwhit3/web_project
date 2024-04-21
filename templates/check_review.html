@@ -2,7 +2,7 @@
 
 {% block content %}
     {% for rev in files %}
-        <h2>{{ rev[0] }}</h2>
+        <a href="/review/{{ rev[0] }}">{{ rev[0] }}</a>
         <img src="{{ rev[1] }}">
         <p>Оценка: {{ rev[2] }}</p>
         <h3>Отзыв: {{ rev[3] }}</h3>
