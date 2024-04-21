@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+    {% for rev in files %}
+        <h2>{{ rev[0] }}</h2>
+        <img src="{{ rev[1] }}">
+        <p>Оценка: {{ rev[2] }}</p>
+        <h3>Отзыв: {{ rev[3] }}</h3>
+    {% endfor %}
+{% endblock %}

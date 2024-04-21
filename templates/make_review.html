@@ -12,6 +12,9 @@
                     {{ error }}
                 </div>
             {% endfor %}
+            {% if err %}
+                <h3>Такого места нет</h3>
+            {% endif %}
         </p>
         <p>
             {{ form.mark.label }}<br>

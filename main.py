@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect
 from data import db_session
 from data.users import User
 from data.reviews import Review
@@ -8,6 +8,7 @@ from forms.login import LoginForm
 from forms.reg import RegisterForm
 from forms.make_review import ReviewForm
 import os
+import requests
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'yandexlyceum_secret_key'
@@ -89,8 +90,11 @@ def delete_profile():
     db_sess = db_session.create_session()
     user = db_sess.query(User).filter(User.name == current_user.name).first()
     os.remove(os.path.abspath(f'static/img/pfp/{current_user.name}.png'))
+    for r in db_sess.query(Review).filter(Review.user_id == current_user.id):
+        db_sess.delete(r)
     db_sess.delete(user)
     db_sess.commit()
+    logout_user()
     return redirect('/')
 
 
@@ -99,6 +103,42 @@ def delete_profile():
 def make_review():
     form = ReviewForm()
     if form.validate_on_submit():
+
+
+        try:
+            search_api_server = "https://search-maps.yandex.ru/v1/"
+            api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+            params = {
+                'apikey': api_key,
+                'text': form.place_name.data,
+                'lang': 'ru_RU',
+                'type': 'biz'
+            }
+            response = requests.get(search_api_server, params=params)
+        except Exception:
+            return render_template('make_review.html', title='Создать отзыв',
+                                   form=form, err=True)
+        if not response:
+            return render_template('make_review.html', title='Создать отзыв',
+                                   form=form, err=True)
+        try:
+            json_response = response.json()
+            organization = json_response["features"][0]
+            org_name = organization["properties"]["CompanyMetaData"]["name"]
+            org_address = organization["properties"]["CompanyMetaData"]["address"]
+            point = organization["geometry"]["coordinates"]
+            org_point = "{0},{1}".format(point[0], point[1])
+            delta = "0.005"
+            ll = org_point
+            spn = ",".join([delta, delta])
+            l = "map"
+            pt = "{0},pm2dgl".format(org_point)
+            map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
+        except Exception:
+            return render_template('make_review.html', title='Создать отзыв',
+                                   form=form, err=True)
+
+
         db_sess = db_session.create_session()
         review = Review(
             place_name=form.place_name.data,
@@ -117,6 +157,36 @@ def make_review():
 def profile():
     return render_template('profile.html')
 
+
+@login_required
+@app.route('/check_review')
+def check_review():
+    db_sess = db_session.create_session()
+    search_api_server = "https://search-maps.yandex.ru/v1/"
+    api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
+    files = []
+    for r in db_sess.query(Review).filter(Review.user_id == current_user.id):
+        params = {
+            'apikey': api_key,
+            'text': r.place_name,
+            'lang': 'ru_RU',
+            'type': 'biz'
+        }
+        response = requests.get(search_api_server, params=params)
+        json_response = response.json()
+        organization = json_response["features"][0]
+        org_name = organization["properties"]["CompanyMetaData"]["name"]
+        org_address = organization["properties"]["CompanyMetaData"]["address"]
+        point = organization["geometry"]["coordinates"]
+        org_point = "{0},{1}".format(point[0], point[1])
+        delta = "0.005"
+        ll = org_point
+        spn = ",".join([delta, delta])
+        l = "map"
+        pt = "{0},pm2dgl".format(org_point)
+        map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
+        files.append((r.place_name, map_api_server, r.mark, r.opinion))
+    return render_template('check_review.html', files=files)
 
 def main():
     db_session.global_init('db/travel.db')
