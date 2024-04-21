@@ -188,6 +188,7 @@ def check_review():
         files.append((r.place_name, map_api_server, r.mark, r.opinion))
     return render_template('check_review.html', files=files)
 
+
 def main():
     db_session.global_init('db/travel.db')
     app.run()
