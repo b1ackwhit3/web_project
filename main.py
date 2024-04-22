@@ -242,8 +242,12 @@ def review(place_name):
     summa = 0
     for el in db_sess.query(Review).filter(Review.place_name == place_name).all():
         summa += el.mark
-    return render_template('review.html', place_name=place_name, p=map_api_server,
-                           sr=summa/n)
+    sr = 0
+    try:
+        sr = summa/n
+    except Exception:
+        pass
+    return render_template('review.html', place_name=place_name, p=map_api_server, sr=sr)
 
 
 

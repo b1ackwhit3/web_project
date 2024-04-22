@@ -4,6 +4,15 @@
     <div class="grid-containter">
     {% for rev in files %}
         <div class="grid-el">
+            <a class="place-name-check-review" href="/review/{{ rev[0] }}">{{ rev[0] }}</a>
+            <img class="gridimg" src="{{ rev[1] }}">
+            <div class="mark-check-review">
+                {% for i in range(rev[2]) %}
+                    <img src="static/img/star.png">
+                {% endfor %}
+                <p>Оценка: {{ rev[2] }}</p>
+            </div>
+            <p class="opinion-check-review">Отзыв: {{ rev[3] }}</p>
         </div>
     {% endfor %}
     </div>

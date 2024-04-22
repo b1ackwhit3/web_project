@@ -2,11 +2,11 @@
 
 {% block content %}
 {% if current_user.have_photo %}
-    <img src="static/img/pfp/{{ current_user.name }}.png" id="ava">
+    <img src="static/img/pfp/{{ current_user.name }}.png" class="ava">
 {% else %}
-    <img src="static/img/default.png" id="ava">
+    <img src="static/img/default.png" class="ava">
 {% endif %}
-<h1>Имя: {{ current_user.name }}</h1>
-<h1>E-mail: {{ current_user.email }}</h1>
-<a href="/delete_profile">Удалить профиль?</a>
+<p class="profile-data">Имя: {{ current_user.name }}</p>
+<p class="profile-data">E-mail: {{ current_user.email }}</p>
+<a class="delete-profile" href="/delete_profile">Удалить профиль?</a>
 {% endblock %}
