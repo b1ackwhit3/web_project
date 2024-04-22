@@ -38,3 +38,19 @@ footer {
     padding-bottom: 0;
     background: aliceblue;
 }
+
+.grid-containter{
+    background: azure;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-el{
+    width: 150px;
+    height: 150px;
+    background: darkseagreen;
+}
+.gridimg{
+    width: 150px;
+    height: 150px;
+}
