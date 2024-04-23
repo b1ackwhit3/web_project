@@ -34,8 +34,6 @@ def index():
         response = requests.get(search_api_server, params=params)
         json_response = response.json()
         organization = json_response["features"][0]
-        org_name = organization["properties"]["CompanyMetaData"]["name"]
-        org_address = organization["properties"]["CompanyMetaData"]["address"]
         point = organization["geometry"]["coordinates"]
         org_point = "{0},{1}".format(point[0], point[1])
         delta = "0.005"
@@ -128,8 +126,6 @@ def delete_profile():
 def make_review():
     form = ReviewForm()
     if form.validate_on_submit():
-
-
         try:
             search_api_server = "https://search-maps.yandex.ru/v1/"
             api_key = "dda3ddba-c9ea-4ead-9010-f43fbc15c6e3"
@@ -148,22 +144,9 @@ def make_review():
                                    form=form, err=True)
         try:
             json_response = response.json()
-            organization = json_response["features"][0]
-            org_name = organization["properties"]["CompanyMetaData"]["name"]
-            org_address = organization["properties"]["CompanyMetaData"]["address"]
-            point = organization["geometry"]["coordinates"]
-            org_point = "{0},{1}".format(point[0], point[1])
-            delta = "0.005"
-            ll = org_point
-            spn = ",".join([delta, delta])
-            l = "map"
-            pt = "{0},pm2dgl".format(org_point)
-            map_api_server = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={l}&pt={pt}"
         except Exception:
             return render_template('make_review.html', title='Создать отзыв',
                                    form=form, err=True)
-
-
         db_sess = db_session.create_session()
         review = Review(
             place_name=form.place_name.data,
@@ -200,8 +183,6 @@ def check_review():
         response = requests.get(search_api_server, params=params)
         json_response = response.json()
         organization = json_response["features"][0]
-        org_name = organization["properties"]["CompanyMetaData"]["name"]
-        org_address = organization["properties"]["CompanyMetaData"]["address"]
         point = organization["geometry"]["coordinates"]
         org_point = "{0},{1}".format(point[0], point[1])
         delta = "0.005"
@@ -228,8 +209,6 @@ def review(place_name):
     response = requests.get(search_api_server, params=params)
     json_response = response.json()
     organization = json_response["features"][0]
-    org_name = organization["properties"]["CompanyMetaData"]["name"]
-    org_address = organization["properties"]["CompanyMetaData"]["address"]
     point = organization["geometry"]["coordinates"]
     org_point = "{0},{1}".format(point[0], point[1])
     delta = "0.005"
@@ -244,11 +223,10 @@ def review(place_name):
         summa += el.mark
     sr = 0
     try:
-        sr = summa/n
+        sr = summa / n
     except Exception:
         pass
     return render_template('review.html', place_name=place_name, p=map_api_server, sr=sr)
-
 
 
 def main():
