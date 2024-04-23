@@ -1,0 +1,126 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+html, body {
+    height: 100%;
+}
+body{
+    background: url(https://gas-kvas.com/uploads/posts/2023-02/1676612724_gas-kvas-com-p-oboi-s-geometricheskim-risunkom-dlya-detsk-28.png);
+}
+.navbar{
+    --bs-navbar-padding-y: 30px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+section {
+    padding: 20px;
+    margin-top: 60px;
+    margin-left: 160px;
+    margin-right: 160px;
+    margin-bottom: 20px;
+    display: block;
+    background-color: white;
+    min-height: 1000px;
+}
+
+.ava {
+    border-radius: 20px;
+    border: 10px solid #a7e8d5;
+    float: left;
+    margin-right: 20px;
+}
+
+.megaava {
+    width: 60px;
+    height: 60px;
+    border: solid #a7e8d5;
+}
+
+footer {
+    margin-left: 20px;
+    margin-right: 20px;
+    margin-up: 20px;
+    margin-bottom: 0;
+    padding-down: 0px;
+    height: 60px;
+    background: aliceblue;
+}
+
+.grid-containter{
+    background: azure;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-el{
+    width: 743px;
+    height: 743px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    background: #a7e8d5;
+    padding: 20px;
+}
+.gridimg{
+    height: 70%;
+}
+.place-name-check-review, .mark-check-review, .opinion-check-review{
+    height: 10%;
+    width: 100%;
+    display: block;
+    text-decoration: none;
+    font-family: "Kanit", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+    color: white;
+    font-size: 25px;
+}
+.index-logo{
+    margin-left: 45%;
+    font-weight: 400;
+    color: #a7e8d5;
+}
+.index-direction{
+    margin-left: 35%;
+    font-weight: 200;
+    color: #a7e8d5;
+}
+.last3review{
+    color: #a7e8d5;
+    margin-top: 30px;
+    font-size: 30px;
+}
+.main-container{
+    background: #fafafa;
+    padding: 20px;
+    display: block;
+    width: 100%;
+    height: 490px;
+    margin-bottom: 20px;
+    border: solid #f7f7f7;
+}
+.main-place-name, .main-img, .main-mark, .main-opinion{
+    display: block;
+    margin-bottom: 20px;
+    font-size: 30px;
+    color: black;
+}
+.main-img{
+    float: left;
+    margin-right: 20px;
+}
+.main-place-name{
+    text-decoration: none;
+}
+.navbar-brand, .nav-link, .pro-text{
+    font-size: 25px;
+    text-decoration: none;
+}
+.profile-data, .delete-profile{
+    font-size: 30px;
+    color: #171717;
+}
+.delete-profile{
+    text-decoration: none;
+    color: red;
+}

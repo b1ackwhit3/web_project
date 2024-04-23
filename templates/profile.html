@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if current_user.have_photo %}
+    <img src="static/img/pfp/{{ current_user.name }}.png" class="ava">
+{% else %}
+    <img src="static/img/default.png" class="ava">
+{% endif %}
+<p class="profile-data">Имя: {{ current_user.name }}</p>
+<p class="profile-data">E-mail: {{ current_user.email }}</p>
+<a class="delete-profile" href="/delete_profile">Удалить профиль?</a>
+{% endblock %}

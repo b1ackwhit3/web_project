@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="grid-el">
+        <img class="gridimg" src="{{ p }}">
+        <a class="place-name-check-review">{{ place_name }}</a>
+        <p class="mark-check-review">Средняя оценка: {{ sr }}</p>
+    </div>
+{% endblock %}

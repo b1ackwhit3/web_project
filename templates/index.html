@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="index-logo">Traveler</h1>
+    <h2 class="index-direction">Что вы думаете об этом месте?</h2>
+    <p class="last3review">Последние 3 отзыва:</p>
+    {% for rev in lastnews %}
+        <div class="main-container">
+            <img class="main-img" src="{{ rev[1] }}">
+            <a class="main-place-name" href="/review/{{ rev[0] }}">{{ rev[0] }}</a>
+            <p class="main-mark">Оценка: {{ rev[2] }}</p>
+            <p class="main-opinion">Отзыв: {{ rev[3] }}</p>
+        </div>
+    {% endfor %}
+{% endblock %}

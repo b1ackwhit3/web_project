@@ -2,6 +2,7 @@ import logging
 from email_validate import validate
 from telegram.ext import Application, MessageHandler, filters, CommandHandler, ConversationHandler
 from telegram import ReplyKeyboardMarkup
+import telegram
 from data import db_session
 from data.users import User
 from data.reviews import Review
@@ -14,7 +15,7 @@ l = lambda x: 'a' <= x <= 'я' or 'А' <= x <= 'Я' or '0' <= x <= '9' or x in (
 temail, tname, tpassword = None, None, None
 torg, tmark, topinion = None, None, None
 wait_name = None
-BOT_TOKEN = '7003047434:AAFLOJSvtnsxSb2eosLtMxKa3xzKY002uME'
+BOT_TOKEN = '7003047434:AAF6gtRtvsz2ybhNV3TEfFDdVzF4r45YfGE'
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.ERROR
 )
@@ -52,24 +53,36 @@ async def add_new_email(update, context):
 
 
 async def add_new_name(update, context):
-    if not validate(update.message.text, check_smtp=False):
+    try:
+        if not validate(update.message.text, check_smtp=False):
+            await update.message.reply_text(
+                'Ошибка. E-mail неправильно введён либо недоступен ',
+                'Попробуйте другой.',
+                reply_markup=back_keyboard)
+            return 'add_new_name'
+        db_sess = db_session.create_session()
+        for user in db_sess.query(User).all():
+            if update.message.text == user.email:
+                await update.message.reply_text('Пользователь с такой почтой уже есть!',
+                                                reply_markup=back_keyboard)
+                return 'add_new_name'
+        global temail
+        temail = update.message.text
+        await update.message.reply_text('Как мне вас называть?',
+                                        reply_markup=back_keyboard)
+        return 'add_new_password'
+    except telegram.error.BadRequest:
         await update.message.reply_text(
             'Ошибка. E-mail неправильно введён либо недоступен ',
             'Попробуйте другой.',
             reply_markup=back_keyboard)
         return 'add_new_name'
-
-    db_sess = db_session.create_session()
-    for user in db_sess.query(User).all():
-        if update.message.text == user.email:
-            await update.message.reply_text('Пользователь с такой почтой уже есть!',
-                                            reply_markup=back_keyboard)
-            return 'add_new_name'
-    global temail
-    temail = update.message.text
-    await update.message.reply_text('Как мне вас называть?',
-                                    reply_markup=back_keyboard)
-    return 'add_new_password'
+    except Exception:
+        await update.message.reply_text(
+            'Ошибка. E-mail неправильно введён либо недоступен ',
+            'Попробуйте другой.',
+            reply_markup=back_keyboard)
+        return 'add_new_name'
 
 
 async def add_new_password(update, context):
