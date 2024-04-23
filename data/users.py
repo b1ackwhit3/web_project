@@ -1,9 +1,10 @@
 import sqlalchemy
+from flask_login import UserMixin
 from .db_session import SqlAlchemyBase, create_session
 from sqlalchemy import orm
 
 
-class User(SqlAlchemyBase):
+class User(SqlAlchemyBase, UserMixin):
     def __repr__(self):
         db_sess = create_session()
         for user in db_sess.query(User).all():
@@ -12,7 +13,14 @@ class User(SqlAlchemyBase):
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer, primary_key=True, autoincrement=True)
-    name = sqlalchemy.Column(sqlalchemy.String, nullable=True)
-    email = sqlalchemy.Column(sqlalchemy.String, index=True, unique=True, nullable=True)
-    password = sqlalchemy.Column(sqlalchemy.String, nullable=True)
+    name = sqlalchemy.Column(sqlalchemy.String, unique=True)
+    email = sqlalchemy.Column(sqlalchemy.String, index=True, unique=True)
+    password = sqlalchemy.Column(sqlalchemy.String)
+    have_photo = sqlalchemy.Column(sqlalchemy.Boolean, default=False)
     review = orm.relationship("Review", back_populates='user')
+
+    def set_password(self, password):
+        self.password = password
+
+    def check_password(self, password):
+        return self.password == password
